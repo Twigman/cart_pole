@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import gym
-import pygame
+import time
 from gym.utils.play import play
 
 '''
@@ -25,41 +25,34 @@ Truncation: Episode length is greater than 500 (200 for v0)
 
 https://www.gymlibrary.dev/environments/classic_control/cart_pole/
 '''
-num_episodes = 20000
+num_episodes = 60000
 # Reward threshold
 max_steps_per_episode = 475
 
 # alpha
-learning_rate = 0.1
+learning_rate = 0.05
 # gamma
 discount_rate = 0.99
-
 # 100% exploration
 exploration_rate = 1
 max_exploration_rate = 1
 min_exploration_rate = 0.01
 # slows down exploration with every episode
-exploration_decay_rate = 0.0005
+exploration_decay_rate = 0.0002
 # precision
 round_digits = 2
 index_factor = pow(10, round_digits)
 
 rewards_all_episodes = []
-state_list = set()
-
-
-def play_manually():
-    mapping = {(pygame.K_LEFT,): 0, (pygame.K_RIGHT,): 1}
-    env = gym.make('CartPole-v1', render_mode='rgb_array')
-    play(env, keys_to_action=mapping)
+print_info_couter_threshold = 1000
 
 
 def init_q_table():
     action_space_size = 2
     # (-.2095, .2095)
     state_space = 0.3 * 2
-    # (-2, 2)
-    vel_space = 2 * 2 
+    # (-2.3, 2.3)
+    vel_space = 2.3 * 2 
     state_space_size = int(state_space * index_factor)
     vel_space_size = int(vel_space * index_factor)
     q_table = np.zeros((state_space_size, vel_space_size, action_space_size))
@@ -70,13 +63,7 @@ def init_q_table():
 def print_q_table(q_table):
     print('\n******** Q-Table ********')
     print(q_table.shape)
-    direction_q_table = np.split(q_table, 2)
-    print('right:')
-    print(direction_q_table[0])
-    print('-------------------------------------')
-    #print(q_table)
-    print('left:')
-    print(direction_q_table[1])
+    print(q_table)
 
 
 def print_avg_reward_per(num_of_episodes=1000): 
@@ -89,13 +76,33 @@ def print_avg_reward_per(num_of_episodes=1000):
         counter += num_of_episodes
 
 
-def simulation(exploration_rate):
+def load_q_table(file):
+    q_table = np.load(file)
+    return q_table
+
+
+def simulation(exploration_rate, load_model=None):
     total_reward = 0
     env = gym.make('CartPole-v1')
-    q_table = init_q_table()
+
+    if load_model is None:
+        q_table = init_q_table()
+    else:
+        q_table = load_q_table(load_model)
+        print('* model ' + str(load_model) + ' loaded *')
+
+    info_counter = 0
+    time_sum = 0
+    time_diff = 0
 
     for episode in range(num_episodes):
-        print('* Episode ' + str(episode + 1) + ' started *')
+        start_time = time.time()
+
+        if info_counter == print_info_couter_threshold:
+            print('* Episode ' + str(episode) + ' started * - time per ' + str(print_info_couter_threshold) + ' episodes: ' + str(round((time_sum - time_diff), 2)) + 's')
+            info_counter = 0
+            time_diff = time_sum
+
         #observation = env.reset(seed=seed)[0]
         observation = env.reset()[0]
         #observation = env.reset()
@@ -137,7 +144,7 @@ def simulation(exploration_rate):
             # reduce reward
             reduced_reward = pow(discount_rate, step) * reward
 
-            if terminated or truncated:
+            if terminated:
                 reduced_reward = -1
 
             # update q table
@@ -164,17 +171,17 @@ def simulation(exploration_rate):
         #print('new exp rate: ' + str(exploration_rate))
 
         rewards_all_episodes.append(total_reward)
+        info_counter += 1
+        end_time = time.time()
+        time_sum += (end_time - start_time)
 
     env.close()
+    print('\ntotal time: ' + str(round(time_sum, 2)) + 's')
+
     return q_table
 
 q_table = simulation(exploration_rate)
 print_avg_reward_per(num_of_episodes=1000)
-print_q_table(q_table)
-print('states: ' + str(state_list))
+#print_q_table(q_table)
 
-np.save('q_table_with_pole_vel.npy', q_table)
-
-
-
-# play_manually()
+np.save('q_table_with_pole_vel_2.npy', q_table)

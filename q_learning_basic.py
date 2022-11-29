@@ -134,7 +134,7 @@ def simulation(exploration_rate):
             # reduce reward
             reduced_reward = pow(discount_rate, step) * reward
 
-            if terminated or truncated:
+            if terminated:
                 reduced_reward = -1
 
             # update q table

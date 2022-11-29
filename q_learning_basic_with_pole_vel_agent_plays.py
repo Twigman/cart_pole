@@ -1,7 +1,5 @@
 import numpy as np
 import gym
-from gym.utils.play import play
-
 '''
 Exercise for reinforcement learning
 
@@ -23,45 +21,24 @@ Truncation: Episode length is greater than 500 (200 for v0)
 
 https://www.gymlibrary.dev/environments/classic_control/cart_pole/
 '''
-num_episodes = 10000
+
 # Reward threshold
 max_steps_per_episode = 475
-
-# alpha
-learning_rate = 0.1
-# gamma
-discount_rate = 0.99
-
-# 100% exploration
-exploration_rate = 1
-max_exploration_rate = 1
-min_exploration_rate = 0.01
-# slows down exploration with every episode
-exploration_decay_rate = 0.001
 # precision
 round_digits = 2
 index_factor = pow(10, round_digits)
-
-rewards_all_episodes = []
-state_list = set()
 
 
 def print_q_table(q_table):
     print('\n******** Q-Table ********')
     print(q_table.shape)
-    direction_q_table = np.split(q_table, 2)
-    print('right:')
-    print(direction_q_table[0])
-    print('-------------------------------------')
-    #print(q_table)
-    print('left:')
-    print(direction_q_table[1])
+    print(q_table)
 
 
 def play_agent():
     total_reward = 0
     env = gym.make('CartPole-v1', render_mode='human')
-    q_table = np.load('q_table_with_pole_vel.npy')
+    q_table = np.load('q_table_with_pole_vel_413.npy')
     print_q_table(q_table)
     
     observation = env.reset()[0]
@@ -81,12 +58,7 @@ def play_agent():
 
         new_pole_angle_state = int(round(observation[2], round_digits) * index_factor)
         new_pole_vel_state = int(round(observation[3], round_digits) * index_factor)
-            #print('init obs: ' + str(observation[2]) + ' -> ' + str(round(observation[2], round_digits)) + ' -> ' + str(int(round(observation[2], round_digits) * index_factor)))
 
-            #print('new_state: ' + str(new_state))
-
-            #print('value: ' + str(pre) + ' -> ' + str(q_table[state, action])) 
-        #print('state: ' + str(state) + ' -> ' + str(new_state))
         pole_angle_state = new_pole_angle_state
         pole_vel_state = new_pole_vel_state
 
