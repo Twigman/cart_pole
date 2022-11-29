@@ -57,7 +57,7 @@ def play_manually():
 def init_q_table():
     action_space_size = 2
     # (-.2095, .2095)
-    state_space = 0.21 * 2
+    state_space = 0.3 * 2
     state_space_size = int(state_space * index_factor)
     q_table = np.zeros((state_space_size, action_space_size))
 
@@ -66,6 +66,7 @@ def init_q_table():
 
 def print_q_table(q_table):
     print('\n******** Q-Table ********')
+    print(q_table.shape)
     direction_q_table = np.split(q_table, 2)
     print('right:')
     print(direction_q_table[0])
@@ -129,19 +130,28 @@ def simulation(exploration_rate):
             #print('init obs: ' + str(observation[2]) + ' -> ' + str(round(observation[2], round_digits)) + ' -> ' + str(int(round(observation[2], round_digits) * index_factor)))
 
             #print('new_state: ' + str(new_state))
+
+            # reduce reward
+            reduced_reward = pow(discount_rate, step) * reward
+
             if terminated or truncated:
-                break
+                reduced_reward = -1
 
             # update q table
+            #pre = q_table[state, action]
+
             q_table[state, action] = (1 - learning_rate) * q_table[state, action] + learning_rate * \
-                (reward + discount_rate * np.max(q_table[new_state, :]))
+                (reduced_reward + discount_rate * np.max(q_table[new_state, :]))
+
+            #print('value: ' + str(pre) + ' -> ' + str(q_table[state, action])) 
+            #print('state: ' + str(state) + ' -> ' + str(new_state))
             state = new_state
             state_list.add(state)
 
-            total_reward += reward
+            if terminated or truncated:
+                break
 
-            #print_step_info(step, observation, total_reward, terminated, truncated, info)
-            
+            total_reward += reward
             
         # update exploration rate
         # the probability that the agent will explore the environment, will become more unlikely with every episode
@@ -158,5 +168,9 @@ q_table = simulation(exploration_rate)
 print_avg_reward_per(num_of_episodes=1000)
 print_q_table(q_table)
 print('states: ' + str(state_list))
+
+np.savetxt('q_table.txt', q_table)
+
+
 
 # play_manually()
